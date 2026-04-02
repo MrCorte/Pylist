@@ -31,6 +31,7 @@ def get_existing_track_ids(sp, playlist_id):
 
 
 def sync_spotify_tracks():
+    print("Step 1: Initializing Spotify...")
     auth_manager = SpotifyOAuth(
         client_id=os.environ["SPOTIPY_CLIENT_ID"],
         client_secret=os.environ["SPOTIPY_CLIENT_SECRET"],
@@ -39,7 +40,9 @@ def sync_spotify_tracks():
     )
     token_info = auth_manager.refresh_access_token(os.environ["SPOTIFY_REFRESH_TOKEN"])
     sp = spotipy.Spotify(auth=token_info["access_token"])
+    print("Step 1: Spotify OK")
 
+    print("Step 2: Connecting to Telegram...")
     client = TelegramClient(
         StringSession(os.environ["TELEGRAM_STRING_SESSION"]),
         int(os.environ["TELEGRAM_API_ID"]),
@@ -47,7 +50,7 @@ def sync_spotify_tracks():
     )
 
     with client:
-        print("Connected to Telegram.")
+        print("Step 2: Connected to Telegram.")
         chat = client.get_entity(CHAT_ID)
 
         spotify_links = []
