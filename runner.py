@@ -31,12 +31,14 @@ def get_existing_track_ids(sp, playlist_id):
 
 
 def sync_spotify_tracks():
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+    auth_manager = SpotifyOAuth(
         client_id=os.environ["SPOTIPY_CLIENT_ID"],
         client_secret=os.environ["SPOTIPY_CLIENT_SECRET"],
         redirect_uri="http://127.0.0.1:8000",
-        scope="playlist-modify-public"
-    ))
+        scope="playlist-modify-public",
+    )
+    token_info = auth_manager.refresh_access_token(os.environ["SPOTIFY_REFRESH_TOKEN"])
+    sp = spotipy.Spotify(auth=token_info["access_token"])
 
     client = TelegramClient(
         StringSession(os.environ["TELEGRAM_STRING_SESSION"]),
