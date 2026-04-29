@@ -32,6 +32,12 @@ def get_existing_track_ids(sp, playlist_id):
     return existing_tracks
 
 def sync_spotify_tracks():
+    required = ["SPOTIPY_CLIENT_ID", "SPOTIPY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN",
+                "TELEGRAM_API_ID", "TELEGRAM_API_HASH", "TELEGRAM_STRING_SESSION"]
+    missing = [k for k in required if not os.getenv(k)]
+    if missing:
+        raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
+
     print("Step 1: Initializing Spotify...")
     auth_manager = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),

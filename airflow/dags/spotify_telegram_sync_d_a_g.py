@@ -66,7 +66,8 @@ def sync_spotify_tracks():
 
             if new_track_ids:
                 print(f"Adding {len(new_track_ids)} new tracks to the Spotify playlist...")
-                sp.playlist_add_items(TARGET_PLAYLIST_ID, new_track_ids)
+                for i in range(0, len(new_track_ids), 100):
+                    sp.playlist_add_items(TARGET_PLAYLIST_ID, new_track_ids[i:i+100])
                 print("Tracks added successfully!")
             else:
                 print("No new tracks to add.")
