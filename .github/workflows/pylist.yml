@@ -2,7 +2,8 @@ name: PyList Spotify Sync
 
 on:
   schedule:
-    - cron: '0 19 * * 3'  # ogni mercoledì alle 19:00 UTC
+    - cron: '0 19 * * 3'  # mercoledì alle 19:00 UTC
+    - cron: '0 19 * * 0'  # domenica alle 19:00 UTC
   workflow_dispatch:       # trigger manuale dalla UI di GitHub
 
 jobs:
