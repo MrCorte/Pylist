@@ -5,6 +5,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
+from youtube_converter import extract_youtube_tracks
 
 TARGET_PLAYLIST_ID = "0YqCQ1jfJ37VmIXWgPM90V"
 CHAT_ID = -1001592882608
@@ -62,14 +63,20 @@ def sync_spotify_tracks():
         print("Step 2: Connected to Telegram.")
         chat = client.get_entity(CHAT_ID)
 
+        messages = list(client.iter_messages(chat, limit=300))
+
         spotify_links = []
-        for message in client.iter_messages(chat, limit=300):
+        for message in messages:
             links = extract_spotify_links(message.text)
             spotify_links.extend(links)
-
         print(f"Found {len(spotify_links)} Spotify links.")
 
+        print("Step 3: Scanning for YouTube links...")
+        yt_track_ids = extract_youtube_tracks(messages, sp)
+        print(f"Step 3: Resolved {len(yt_track_ids)} tracks from YouTube links.")
+
         track_ids = [link.split("/")[-1].split("?")[0] for link in spotify_links]
+        track_ids.extend(yt_track_ids)
         unique_track_ids = list(dict.fromkeys(track_ids))
         existing_track_ids = get_existing_track_ids(sp, playlist_id=TARGET_PLAYLIST_ID)
         new_track_ids = [t for t in unique_track_ids if t not in existing_track_ids]
