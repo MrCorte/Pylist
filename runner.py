@@ -106,7 +106,10 @@ def sync_spotify_tracks():
 
         for idx, (chat_id, playlist_id) in enumerate(configs, 1):
             print(f"\nStep 3.{idx}: Syncing config {idx}/{len(configs)}...")
-            _sync_one(client, sp, chat_id, playlist_id)
+            try:
+                _sync_one(client, sp, chat_id, playlist_id)
+            except Exception as e:
+                print(f"  ERROR on config {idx}: {e}")
 
     print("\nAll syncs complete.")
 
