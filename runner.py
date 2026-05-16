@@ -7,10 +7,6 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from youtube_converter import extract_youtube_tracks
 
-TARGET_PLAYLIST_ID = "0YqCQ1jfJ37VmIXWgPM90V"
-CHAT_ID = -1001592882608
-
-# Carica le variabili d'ambiente dal file .env
 load_dotenv()
 
 def extract_spotify_links(text):
@@ -31,6 +27,49 @@ def get_existing_track_ids(sp, playlist_id):
         else:
             break
     return existing_tracks
+
+def _get_sync_configs():
+    configs = []
+    i = 1
+    while True:
+        chat_id = os.getenv(f"SYNC_{i}_CHAT_ID")
+        playlist_id = os.getenv(f"SYNC_{i}_PLAYLIST_ID")
+        if not chat_id or not playlist_id:
+            break
+        configs.append((int(chat_id), playlist_id))
+        i += 1
+    if not configs:
+        raise RuntimeError("No sync configs found. Set SYNC_1_CHAT_ID and SYNC_1_PLAYLIST_ID.")
+    return configs
+
+def _sync_one(client, sp, chat_id, playlist_id):
+    print(f"  Chat: {chat_id} -> Playlist: {playlist_id}")
+    chat = client.get_entity(chat_id)
+    messages = list(client.iter_messages(chat, limit=300))
+
+    spotify_links = []
+    for message in messages:
+        links = extract_spotify_links(message.text)
+        spotify_links.extend(links)
+    print(f"  Found {len(spotify_links)} Spotify links.")
+
+    print("  Scanning for YouTube links...")
+    yt_track_ids = extract_youtube_tracks(messages, sp)
+    print(f"  Resolved {len(yt_track_ids)} tracks from YouTube links.")
+
+    track_ids = [link.split("/")[-1].split("?")[0] for link in spotify_links]
+    track_ids.extend(yt_track_ids)
+    unique_track_ids = list(dict.fromkeys(track_ids))
+    existing_track_ids = get_existing_track_ids(sp, playlist_id=playlist_id)
+    new_track_ids = [t for t in unique_track_ids if t not in existing_track_ids]
+
+    if new_track_ids:
+        print(f"  Adding {len(new_track_ids)} new tracks...")
+        for i in range(0, len(new_track_ids), 100):
+            sp.playlist_add_items(playlist_id, new_track_ids[i:i+100])
+        print("  Tracks added successfully!")
+    else:
+        print("  No new tracks to add.")
 
 def sync_spotify_tracks():
     required = ["SPOTIPY_CLIENT_ID", "SPOTIPY_CLIENT_SECRET", "SPOTIFY_REFRESH_TOKEN",
@@ -57,37 +96,19 @@ def sync_spotify_tracks():
         os.getenv("TELEGRAM_API_HASH"),
     )
 
+    configs = _get_sync_configs()
+    print(f"Step 2: {len(configs)} sync config(s) found.")
+
     with client:
         if not client.is_user_authorized():
             raise RuntimeError("Telegram session expired or invalid. Regenerate TELEGRAM_STRING_SESSION.")
         print("Step 2: Connected to Telegram.")
-        chat = client.get_entity(CHAT_ID)
 
-        messages = list(client.iter_messages(chat, limit=300))
+        for idx, (chat_id, playlist_id) in enumerate(configs, 1):
+            print(f"\nStep 3.{idx}: Syncing config {idx}/{len(configs)}...")
+            _sync_one(client, sp, chat_id, playlist_id)
 
-        spotify_links = []
-        for message in messages:
-            links = extract_spotify_links(message.text)
-            spotify_links.extend(links)
-        print(f"Found {len(spotify_links)} Spotify links.")
-
-        print("Step 3: Scanning for YouTube links...")
-        yt_track_ids = extract_youtube_tracks(messages, sp)
-        print(f"Step 3: Resolved {len(yt_track_ids)} tracks from YouTube links.")
-
-        track_ids = [link.split("/")[-1].split("?")[0] for link in spotify_links]
-        track_ids.extend(yt_track_ids)
-        unique_track_ids = list(dict.fromkeys(track_ids))
-        existing_track_ids = get_existing_track_ids(sp, playlist_id=TARGET_PLAYLIST_ID)
-        new_track_ids = [t for t in unique_track_ids if t not in existing_track_ids]
-
-        if new_track_ids:
-            print(f"Adding {len(new_track_ids)} new tracks...")
-            for i in range(0, len(new_track_ids), 100):
-                sp.playlist_add_items(TARGET_PLAYLIST_ID, new_track_ids[i:i+100])
-            print("Tracks added successfully!")
-        else:
-            print("No new tracks to add.")
+    print("\nAll syncs complete.")
 
 if __name__ == "__main__":
     sync_spotify_tracks()
