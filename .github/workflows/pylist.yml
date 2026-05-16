@@ -34,3 +34,7 @@ jobs:
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_STRING_SESSION: ${{ secrets.TELEGRAM_STRING_SESSION }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+          SYNC_1_CHAT_ID: ${{ secrets.SYNC_1_CHAT_ID }}
+          SYNC_1_PLAYLIST_ID: ${{ secrets.SYNC_1_PLAYLIST_ID }}
+          SYNC_2_CHAT_ID: ${{ secrets.SYNC_2_CHAT_ID }}
+          SYNC_2_PLAYLIST_ID: ${{ secrets.SYNC_2_PLAYLIST_ID }}
